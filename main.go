@@ -14,7 +14,7 @@ import (
 
 // Конфигурация OpenAI API
 const openAIAPIURL = "https://api.openai.com/v1/chat/completions"
-const openAIAPIKey = "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"
+const openAIAPIKey = "sk-ijklmnopqrstuvwxijklmnopqrstuvwxijklmnop"
 
 func main() {
 	// Токен Telegram бота
