@@ -1,9 +1,9 @@
-package main
+ 
+  package main
 
 import (
 	"bytes"
 	"encoding/json"
-	"io" // заменили ioutil на io
 	"log"
 	"math/rand"
 	"net/http"
@@ -14,7 +14,7 @@ import (
 
 // Конфигурация OpenAI API
 const openAIAPIURL = "https://api.openai.com/v1/chat/completions"
-const openAIAPIKey = "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"
+const openAIAPIKey = "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"
 
 func main() {
 	// Токен Telegram бота
@@ -107,7 +107,7 @@ func getOpenAIResponse(userMessage string) (string, error) {
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		body, _ := io.ReadAll(resp.Body) // заменили ioutil.ReadAll на io.ReadAll
+		body, _ := ioutil.ReadAll(resp.Body)
 		log.Printf("OpenAI API error: %s", body)
 		return "", err
 	}
