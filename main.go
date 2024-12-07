@@ -1,9 +1,9 @@
- 
-  package main
+package main
 
 import (
 	"bytes"
 	"encoding/json"
+	"io" // заменили ioutil на io
 	"log"
 	"math/rand"
 	"net/http"
@@ -107,7 +107,7 @@ func getOpenAIResponse(userMessage string) (string, error) {
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		body, _ := ioutil.ReadAll(resp.Body)
+		body, _ := io.ReadAll(resp.Body) // заменили ioutil.ReadAll на io.ReadAll
 		log.Printf("OpenAI API error: %s", body)
 		return "", err
 	}
