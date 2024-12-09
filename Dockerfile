@@ -10,8 +10,11 @@ RUN apk update && apk add git
 # Копируем go.mod и go.sum
 COPY go.mod go.sum ./
 
-# Устанавливаем зависимости
+# Устанавливаем зависимости, включая те, которые указаны в go.mod
 RUN go mod download
+
+# Загружаем недостающие зависимости, если они не были добавлены
+RUN go get github.com/kelvins/slugify
 
 # Загружаем и очищаем зависимости Go
 RUN go mod tidy
