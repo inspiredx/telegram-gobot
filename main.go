@@ -66,7 +66,7 @@ func main() {
 }
 
 // Функция для отправки случайной мотивационной фразы раз в минуту
-func sendRandomMotivationalPhrases(b *tele.Bot, userID int) {
+func sendRandomMotivationalPhrases(b *tele.Bot, userID int64) {
 	for {
 		// Спим 1 минуту
 		time.Sleep(time.Minute)
