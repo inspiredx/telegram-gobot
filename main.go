@@ -3,8 +3,10 @@ package main
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"io"
 	"log"
+	"math/rand"
 	"net/http"
 	"strings"
 	"time"
@@ -16,13 +18,13 @@ import (
 const openAIAPIURL = "https://api.openai.com/v1/chat/completions"
 const openAIAPIKey = "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"
 
+// Карта городов и часовых поясов
 var userCityMap = map[string]string{
 	"Москва":   "Europe/Moscow",
 	"Лондон":   "Europe/London",
 	"Нью-Йорк": "America/New_York",
 	"Токио":    "Asia/Tokyo",
 	"Сидней":   "Australia/Sydney",
-	// Добавьте другие города и часовые пояса
 }
 
 func main() {
@@ -76,6 +78,15 @@ func main() {
 		return c.Send(motivationPhrase)
 	})
 
+	// Запуск фоновой горутины, которая будет отправлять мотивационные фразы в 9:00, 13:00, 21:00, 23:59, 00:10 и 00:15
+	go func() {
+		for {
+			// Каждую минуту проверяем текущее время
+			time.Sleep(time.Minute)
+			checkAndSendMotivation(b)
+		}
+	}()
+
 	// Запуск бота
 	log.Println("Бот запущен...")
 	b.Start()
@@ -104,11 +115,31 @@ func getMotivationalPhrase(city string) string {
 		phrase = "Вечер наступил. Расслабься и отпразднуй все, что ты достиг сегодня!"
 	case currentTime.Hour() == 23 && currentTime.Minute() == 59:
 		phrase = "Перед сном подытожь день. Ты сделал много! Завтра будет еще лучше!"
+	case currentTime.Hour() == 0 && currentTime.Minute() == 10:
+		phrase = "10 минут после полуночи, но не беспокойся — новый день уже начался! Время двигаться вперед!"
+	case currentTime.Hour() == 0 && currentTime.Minute() == 15:
+		phrase = "15 минут после полуночи! Начни новый день с вдохновения и уверенности!"
 	default:
 		phrase = "Продолжай двигаться вперед! Ты на верном пути!"
 	}
 
 	return phrase
+}
+
+// Функция для проверки времени и отправки мотивационной фразы
+func checkAndSendMotivation(b *tele.Bot) {
+	// Список всех пользователей, которым нужно отправить фразу (предположим, что пользователи сохранены где-то в мапе)
+	// Для простоты примера будем использовать фиктивную карту пользователей
+	users := []tele.User{
+		{Username: "testuser1", ID: 12345}, // Пример пользователя
+	}
+
+	// Для каждого пользователя проверяем его город и отправляем мотивационную фразу
+	for _, user := range users {
+		city := "Москва" // Здесь нужно получить город пользователя, если он уже указан
+		motivationPhrase := getMotivationalPhrase(city)
+		b.Send(&user, motivationPhrase)
+	}
 }
 
 // Функция для отправки запроса к OpenAI (можно оставить, если потребуется)
