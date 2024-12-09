@@ -13,6 +13,9 @@ RUN go mod download
 # Копируем остальные файлы
 COPY . .
 
+# Загружаем и очищаем зависимости Go
+RUN go mod tidy
+
 # Собираем исполняемый файл
 RUN go build -o bot .
 
