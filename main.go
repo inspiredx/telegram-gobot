@@ -8,12 +8,15 @@ import (
 	tele "gopkg.in/telebot.v4"
 )
 
-// Вопросы квиза с вариантами ответов и правильными ответами
-var quizQuestions = []struct {
+// Определение структуры для вопроса квиза
+type QuizQuestion struct {
 	Question string
 	Options  []string
 	Answer   int // Индекс правильного ответа в массиве options (начиная с 0)
-}{
+}
+
+// Вопросы квиза с вариантами ответов и правильными ответами
+var quizQuestions = []QuizQuestion{
 	{
 		Question: "Когда был основан город Ломоносов?",
 		Options:  []string{"1715", "1765", "1812", "1900"},
@@ -92,11 +95,7 @@ func startQuiz(b *tele.Bot, c tele.Context) {
 
 	// Перемешиваем вопросы
 	rand.Seed(time.Now().UnixNano())
-	quizQuestionsCopy := append([]struct {
-		Question string
-		Options  []string
-		Answer   int
-	}, quizQuestions...)
+	quizQuestionsCopy := append([]QuizQuestion{}, quizQuestions...)
 	rand.Shuffle(len(quizQuestionsCopy), func(i, j int) {
 		quizQuestionsCopy[i], quizQuestionsCopy[j] = quizQuestionsCopy[j], quizQuestionsCopy[i]
 	})
