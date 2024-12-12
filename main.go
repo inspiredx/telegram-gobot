@@ -101,7 +101,7 @@ func startQuiz(b *tele.Bot, c tele.Context) {
 	})
 
 	// Задаем вопросы
-	for i, q := range quizQuestionsCopy {
+	for _, q := range quizQuestionsCopy { // Используем _ вместо i
 		// Формируем сообщение с вопросом и вариантами ответов
 		options := ""
 		for j, option := range q.Options {
