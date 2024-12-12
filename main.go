@@ -45,6 +45,11 @@ var quizQuestions = []QuizQuestion{
 	},
 }
 
+type UserSession struct {
+	QuestionIndex int
+	Score         int
+}
+
 func main() {
 	// Токен Telegram бота
 	token := "7824776293:AAHIfprFjFTWYBFA05KaHs6cRPN-_xOoe1Q"
@@ -76,10 +81,47 @@ func main() {
 			username = c.Sender().FirstName
 		}
 		// Приветствие пользователю
-		c.Send("Привет, " + username + "! Давай начнем квиз по городу Ломоносов. Я буду задавать вопросы, а ты выбирай правильный ответ!")
+		c.Send("Привет, " + username + "! Давай начнем квиз по городу Ломоносов. Я буду задавать вопросы по одному.")
 
-		// Запуск квиза
+		// Начинаем квиз
 		startQuiz(b, c)
+
+		return nil
+	})
+
+	// Обработка нажатия на кнопки
+	b.Handle(tele.OnCallback, func(c tele.Context) error {
+		// Получаем сессии пользователя
+		session := getSession(c.Sender().ID)
+
+		// Получаем текущий вопрос
+		q := quizQuestions[session.QuestionIndex]
+
+		// Проверяем правильность ответа
+		userAnswer := c.Callback().Data
+		answerIndex, err := stringToInt(userAnswer)
+		if err != nil {
+			return err
+		}
+
+		var correctAnswer string
+		if answerIndex == q.Answer {
+			session.Score++
+			correctAnswer = "Правильно!"
+		} else {
+			correctAnswer = "Неправильно!"
+		}
+
+		// Отправляем сообщение о правильности ответа
+		b.Send(c.Sender(), correctAnswer)
+
+		// Переходим к следующему вопросу или завершаем квиз
+		session.QuestionIndex++
+		if session.QuestionIndex < len(quizQuestions) {
+			askQuestion(b, c, session)
+		} else {
+			b.Send(c.Sender(), fmt.Sprintf("Квиз завершен! Ваш результат: %d/%d", session.Score, len(quizQuestions)))
+		}
 
 		return nil
 	})
@@ -91,66 +133,57 @@ func main() {
 
 // Функция для начала квиза
 func startQuiz(b *tele.Bot, c tele.Context) {
-	score := 0
-	totalQuestions := len(quizQuestions)
+	// Создаем сессию пользователя
+	session := &UserSession{
+		QuestionIndex: 0,
+		Score:         0,
+	}
 
-	// Перемешиваем вопросы
-	rand.Seed(time.Now().UnixNano())
-	quizQuestionsCopy := append([]QuizQuestion{}, quizQuestions...)
-	rand.Shuffle(len(quizQuestionsCopy), func(i, j int) {
-		quizQuestionsCopy[i], quizQuestionsCopy[j] = quizQuestionsCopy[j], quizQuestionsCopy[i]
-	})
+	// Сохраняем сессию
+	setSession(c.Sender().ID, session)
 
-	// Задаем вопросы
-	for _, q := range quizQuestionsCopy {
-		// Формируем inline кнопки с вариантами ответов
-		buttons := []tele.InlineButton{}
-		for i, option := range q.Options {
-			buttons = append(buttons, tele.InlineButton{
-				Text: option,
-				Data: fmt.Sprintf("%d", i), // Сохраняем индекс ответа в Data
-			})
-		}
+	// Задаем первый вопрос
+	askQuestion(b, c, session)
+}
 
-		// Формируем сообщение с вопросом
-		msg := q.Question
-		keyboard := &tele.ReplyMarkup{
-			InlineKeyboard: [][]tele.InlineButton{
-				buttons,
-			},
-		}
+// Функция для отправки вопроса
+func askQuestion(b *tele.Bot, c tele.Context, session *UserSession) {
+	q := quizQuestions[session.QuestionIndex]
 
-		// Отправляем вопрос с кнопками
-		b.Send(c.Sender(), msg, keyboard)
-
-		// Ожидаем ответа пользователя
-		b.Handle(tele.OnCallback, func(c tele.Context) error {
-			// Получаем ответ от пользователя
-			answer := c.Callback().Data
-			userAnswer, err := stringToInt(answer)
-			if err != nil {
-				return err
-			}
-
-			// Проверяем, правильный ли ответ
-			var correctAnswer string
-			if userAnswer == q.Answer {
-				score++
-				correctAnswer = "Правильно!"
-			} else {
-				correctAnswer = "Неправильно!"
-			}
-
-			// Отправляем ответ пользователю
-			b.Send(c.Sender(), correctAnswer)
-
-			// Удаляем предыдущие кнопки
-			b.Edit(c.Callback().Message, "Квиз завершен! Ваш результат: "+fmt.Sprintf("%d/%d", score, totalQuestions), nil)
-			return nil
+	// Формируем inline кнопки с вариантами ответов
+	buttons := []tele.InlineButton{}
+	for i, option := range q.Options {
+		buttons = append(buttons, tele.InlineButton{
+			Text: option,
+			Data: fmt.Sprintf("%d", i), // Сохраняем индекс ответа в Data
 		})
 	}
 
-	// Подведение итогов
+	// Формируем сообщение с вопросом
+	msg := q.Question
+	keyboard := &tele.ReplyMarkup{
+		InlineKeyboard: [][]tele.InlineButton{
+			buttons,
+		},
+	}
+
+	// Отправляем вопрос с кнопками
+	b.Send(c.Sender(), msg, keyboard)
+}
+
+// Функции для работы с сессиями
+var sessions = make(map[int64]*UserSession)
+
+func getSession(userID int64) *UserSession {
+	session, exists := sessions[userID]
+	if !exists {
+		return nil
+	}
+	return session
+}
+
+func setSession(userID int64, session *UserSession) {
+	sessions[userID] = session
 }
 
 func stringToInt(s string) (int, error) {
