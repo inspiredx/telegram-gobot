@@ -151,16 +151,18 @@ func askQuestion(b *tele.Bot, c tele.Context, session *UserSession) {
 	q := quizQuestions[session.QuestionIndex]
 
 	// Формируем inline кнопки с вариантами ответов
-	buttons := []tele.InlineButton{}
+	buttons := make([]tele.InlineButton, len(q.Options))
 	for i, option := range q.Options {
-		buttons = append(buttons, tele.InlineButton{
+		buttons[i] = tele.InlineButton{
 			Text: option,
 			Data: fmt.Sprintf("%d", i), // Сохраняем индекс ответа в Data
-		})
+		}
 	}
 
 	// Формируем сообщение с вопросом
 	msg := q.Question
+
+	// Формируем объект ReplyMarkup для inline кнопок
 	keyboard := &tele.ReplyMarkup{
 		InlineKeyboard: [][]tele.InlineButton{
 			buttons,
@@ -168,7 +170,10 @@ func askQuestion(b *tele.Bot, c tele.Context, session *UserSession) {
 	}
 
 	// Отправляем вопрос с кнопками
-	b.Send(c.Sender(), msg, keyboard)
+	_, err := b.Send(c.Sender(), msg, keyboard)
+	if err != nil {
+		log.Printf("Ошибка при отправке вопроса: %v", err)
+	}
 }
 
 // Функции для работы с сессиями
