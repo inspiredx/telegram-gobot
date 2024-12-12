@@ -46,7 +46,7 @@ var quizQuestions = []QuizQuestion{
 
 func main() {
 	// Токен Telegram бота
-	token := "7824776293:AAHIfprFjFTWYBFA05KaHs6cRPN-_xOoe1Q"
+	token := "YOUR_BOT_TOKEN"
 
 	// Настройки бота
 	pref := tele.Settings{
@@ -101,43 +101,59 @@ func startQuiz(b *tele.Bot, c tele.Context) {
 	})
 
 	// Задаем вопросы
-	for _, q := range quizQuestionsCopy { // Используем _ вместо i
-		// Формируем сообщение с вопросом и вариантами ответов
-		options := ""
-		for j, option := range q.Options {
-			options += string('A'+j) + ". " + option + "\n"
+	for _, q := range quizQuestionsCopy {
+		// Формируем inline кнопки с вариантами ответов
+		buttons := []tele.Button{}
+		for i, option := range q.Options {
+			buttons = append(buttons, tele.Button{
+				Text: option,
+				Data: string(i), // Сохраняем индекс ответа в Data
+			})
 		}
-		msg := q.Question + "\n" + options
 
-		// Отправляем вопрос
-		b.Send(c.Sender(), msg)
+		// Формируем сообщение с вопросом
+		msg := q.Question
+		keyboard := &tele.ReplyMarkup{
+			InlineKeyboard: [][]tele.Button{
+				buttons,
+			},
+		}
+
+		// Отправляем вопрос с кнопками
+		b.Send(c.Sender(), msg, keyboard)
 
 		// Ожидаем ответа пользователя
-		answerCh := make(chan string)
-		b.Handle("/answer", func(c tele.Context) error {
-			answer := c.Text()
-			answerCh <- answer
+		b.Handle(tele.OnCallback, func(c tele.Context) error {
+			// Получаем ответ от пользователя
+			answer := c.Callback().Data
+			userAnswer, err := stringToInt(answer)
+			if err != nil {
+				return err
+			}
+
+			// Проверяем, правильный ли ответ
+			var correctAnswer string
+			if userAnswer == q.Answer {
+				score++
+				correctAnswer = "Правильно!"
+			} else {
+				correctAnswer = "Неправильно!"
+			}
+
+			// Отправляем ответ пользователю
+			b.Send(c.Sender(), correctAnswer)
+
+			// Удаляем предыдущие кнопки
+			b.Edit(c.Callback().Message, "Квиз завершен! Ваш результат: "+string(score)+"/"+string(totalQuestions), nil)
 			return nil
 		})
-
-		// Получаем ответ от пользователя
-		answer := <-answerCh
-
-		// Проверяем, правильный ли ответ
-		var correctAnswer string
-		if answer == string('A'+q.Answer) {
-			score++
-			correctAnswer = "Правильно!"
-		} else {
-			correctAnswer = "Неправильно!"
-		}
-
-		// Отправляем ответ пользователю
-		b.Send(c.Sender(), correctAnswer)
 	}
 
 	// Подведение итогов
-	resultMessage := "Квиз завершен! Ваш результат: \n"
-	resultMessage += "Правильных ответов: " + string(score) + "/" + string(totalQuestions)
-	b.Send(c.Sender(), resultMessage)
+}
+
+func stringToInt(s string) (int, error) {
+	var result int
+	_, err := fmt.Sscanf(s, "%d", &result)
+	return result, err
 }
