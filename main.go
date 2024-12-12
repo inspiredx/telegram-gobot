@@ -46,7 +46,7 @@ var quizQuestions = []QuizQuestion{
 
 func main() {
 	// Токен Telegram бота
-	token := "YOUR_BOT_TOKEN"
+	token := "7824776293:AAHIfprFjFTWYBFA05KaHs6cRPN-_xOoe1Q"
 
 	// Настройки бота
 	pref := tele.Settings{
