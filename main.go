@@ -44,6 +44,7 @@ var quizQuestions = []QuizQuestion{
 	},
 }
 
+// Структура сессии для каждого пользователя
 type UserSession struct {
 	QuestionIndex int
 	Score         int
