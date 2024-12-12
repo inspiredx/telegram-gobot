@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"math/rand"
 	"time"
@@ -46,7 +47,7 @@ var quizQuestions = []QuizQuestion{
 
 func main() {
 	// Токен Telegram бота
-	token := "YOUR_BOT_TOKEN"
+	token := "7824776293:AAHIfprFjFTWYBFA05KaHs6cRPN-_xOoe1Q"
 
 	// Настройки бота
 	pref := tele.Settings{
@@ -103,18 +104,18 @@ func startQuiz(b *tele.Bot, c tele.Context) {
 	// Задаем вопросы
 	for _, q := range quizQuestionsCopy {
 		// Формируем inline кнопки с вариантами ответов
-		buttons := []tele.Button{}
+		buttons := []tele.InlineButton{}
 		for i, option := range q.Options {
-			buttons = append(buttons, tele.Button{
+			buttons = append(buttons, tele.InlineButton{
 				Text: option,
-				Data: string(i), // Сохраняем индекс ответа в Data
+				Data: fmt.Sprintf("%d", i), // Сохраняем индекс ответа в Data
 			})
 		}
 
 		// Формируем сообщение с вопросом
 		msg := q.Question
 		keyboard := &tele.ReplyMarkup{
-			InlineKeyboard: [][]tele.Button{
+			InlineKeyboard: [][]tele.InlineButton{
 				buttons,
 			},
 		}
@@ -144,7 +145,7 @@ func startQuiz(b *tele.Bot, c tele.Context) {
 			b.Send(c.Sender(), correctAnswer)
 
 			// Удаляем предыдущие кнопки
-			b.Edit(c.Callback().Message, "Квиз завершен! Ваш результат: "+string(score)+"/"+string(totalQuestions), nil)
+			b.Edit(c.Callback().Message, "Квиз завершен! Ваш результат: "+fmt.Sprintf("%d/%d", score, totalQuestions), nil)
 			return nil
 		})
 	}
