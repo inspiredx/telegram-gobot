@@ -1,53 +1,48 @@
 package main
 
 import (
-	"fmt"
 	"log"
+	"math/rand"
 	"time"
 
 	tele "gopkg.in/telebot.v4"
 )
 
-// Определение структуры для вопроса квиза
-type QuizQuestion struct {
-	Question string
-	Options  []string
-	Answer   int // Индекс правильного ответа в массиве options (начиная с 0)
-}
-
-// Вопросы квиза с вариантами ответов и правильными ответами
-var quizQuestions = []QuizQuestion{
-	{
-		Question: "Когда был основан город Ломоносов?",
-		Options:  []string{"1715", "1765", "1812", "1900"},
-		Answer:   1, // правильный ответ — 1765
-	},
-	{
-		Question: "Какое название носил город до 1948 года?",
-		Options:  []string{"Ломоносов", "Озерки", "Орехово", "Северная звезда"},
-		Answer:   0, // правильный ответ — Ломоносов
-	},
-	{
-		Question: "Какой крупнейший памятник города?",
-		Options:  []string{"Памятник Петру I", "Памятник В.И. Ленину", "Памятник Николаю I", "Памятник А.С. Пушкину"},
-		Answer:   2, // правильный ответ — Памятник Николаю I
-	},
-	{
-		Question: "Какой реки протекает через город Ломоносов?",
-		Options:  []string{"Невы", "Охта", "Славянка", "Нарва"},
-		Answer:   2, // правильный ответ — Славянка
-	},
-	{
-		Question: "Как называется главный университет в Ломоносове?",
-		Options:  []string{"Ломоносовский университет", "Северный университет", "Ленинградский университет", "Московский университет"},
-		Answer:   0, // правильный ответ — Ломоносовский университет
-	},
-}
-
-// Структура сессии для каждого пользователя
-type UserSession struct {
-	QuestionIndex int
-	Score         int
+// Массив мотивационных фраз
+var motivationPhrases = []string{
+	"Ты можешь больше, чем думаешь!",
+	"Каждый шаг приближает тебя к цели!",
+	"Никогда не сдавайся, даже если трудно!",
+	"Ты сильнее, чем кажется!",
+	"Верь в себя — ты уже на правильном пути!",
+	"Ты заслуживаешь успеха!",
+	"Сегодня лучший день для того, чтобы начать!",
+	"Твоя упорность и труд принесут плоды!",
+	"Не останавливайся — твоя цель уже близка!",
+	"Не бойся ошибаться, ведь ошибки — это опыт!",
+	"Каждый день — это шанс стать лучше, чем вчера!",
+	"Если ты хочешь, чтобы всё изменилось, начни с себя!",
+	"Ты способен на большее, чем можешь себе представить!",
+	"Ты уже делаешь шаги к своей мечте — не останавливайся!",
+	"Будь настойчивым, и успех не заставит себя ждать!",
+	"Не останавливайся на достигнутом — впереди ещё много побед!",
+	"Не бойся неудач — они приводят к успеху!",
+	"Каждый новый день — это возможность для роста!",
+	"Самые лучшие вещи происходят за пределами твоей зоны комфорта!",
+	"Ты — автор своей жизни, и она будет успешной!",
+	"Смело иди к своей мечте, и она сбудется!",
+	"Ты заслуживаешь счастья и успеха!",
+	"Если ты хочешь изменений — начни с действий!",
+	"Сегодня — идеальный день для начала нового пути!",
+	"Ты обладаешь всеми силами, чтобы изменить свою жизнь!",
+	"Будь лучшей версией себя и продолжай двигаться вперед!",
+	"Верь в себя, даже если мир сомневается!",
+	"Ты всегда можешь сделать первый шаг — и всё изменится!",
+	"Твои усилия обязательно приведут к результату!",
+	"Жизнь — это не проблема, которую нужно решить, а приключение, которое нужно пережить!",
+	"Только ты решаешь, как прожить этот день!",
+	"Каждый день — это новая возможность улучшить свою жизнь!",
+	"Никогда не теряй веру в себя, даже когда всё идет не по плану!",
 }
 
 func main() {
@@ -81,47 +76,10 @@ func main() {
 			username = c.Sender().FirstName
 		}
 		// Приветствие пользователю
-		c.Send("Привет, " + username + "! Давай начнем квиз по городу Ломоносов. Я буду задавать вопросы по одному.")
-
-		// Начинаем квиз
-		startQuiz(b, c)
-
-		return nil
-	})
-
-	// Обработка нажатия на кнопки
-	b.Handle(tele.OnCallback, func(c tele.Context) error {
-		// Получаем сессии пользователя
-		session := getSession(c.Sender().ID)
-
-		// Получаем текущий вопрос
-		q := quizQuestions[session.QuestionIndex]
-
-		// Проверяем правильность ответа
-		userAnswer := c.Callback().Data
-		answerIndex, err := stringToInt(userAnswer)
-		if err != nil {
-			return err
-		}
-
-		var correctAnswer string
-		if answerIndex == q.Answer {
-			session.Score++
-			correctAnswer = "Правильно!"
-		} else {
-			correctAnswer = "Неправильно!"
-		}
-
-		// Отправляем сообщение о правильности ответа
-		b.Send(c.Sender(), correctAnswer)
-
-		// Переходим к следующему вопросу или завершаем квиз
-		session.QuestionIndex++
-		if session.QuestionIndex < len(quizQuestions) {
-			askQuestion(b, c, session)
-		} else {
-			b.Send(c.Sender(), fmt.Sprintf("Квиз завершен! Ваш результат: %d/%d", session.Score, len(quizQuestions)))
-		}
+		c.Send("Привет, " + username + "! Я буду отправлять тебе мотивационные фразы раз в 10 минут.")
+		
+		// Запускаем фоновую горутину, которая будет отправлять фразы каждые 10 минут
+		go sendRandomMotivationalPhrases(b, c.Sender().ID)
 
 		return nil
 	})
@@ -131,68 +89,19 @@ func main() {
 	b.Start()
 }
 
-// Функция для начала квиза
-func startQuiz(b *tele.Bot, c tele.Context) {
-	// Создаем сессию пользователя
-	session := &UserSession{
-		QuestionIndex: 0,
-		Score:         0,
-	}
+// Функция для отправки случайной мотивационной фразы каждые 10 минут
+func sendRandomMotivationalPhrases(b *tele.Bot, userID int64) {
+	for {
+		// Спим 10 минут
+		time.Sleep(10 * time.Minute)
 
-	// Сохраняем сессию
-	setSession(c.Sender().ID, session)
+		// Генерируем случайную фразу
+		randomPhrase := motivationPhrases[rand.Intn(len(motivationPhrases))]
 
-	// Задаем первый вопрос
-	askQuestion(b, c, session)
-}
-
-// Функция для отправки вопроса
-func askQuestion(b *tele.Bot, c tele.Context, session *UserSession) {
-	q := quizQuestions[session.QuestionIndex]
-
-	// Формируем inline кнопки с вариантами ответов
-	buttons := make([]tele.InlineButton, len(q.Options))
-	for i, option := range q.Options {
-		buttons[i] = tele.InlineButton{
-			Text: option,
-			Data: fmt.Sprintf("%d", i), // Сохраняем индекс ответа в Data
+		// Отправляем фразу пользователю
+		_, err := b.Send(&tele.User{ID: userID}, randomPhrase)
+		if err != nil {
+			log.Printf("Ошибка при отправке фразы: %v", err)
 		}
 	}
-
-	// Формируем сообщение с вопросом
-	msg := q.Question
-
-	// Формируем объект ReplyMarkup для inline кнопок
-	keyboard := &tele.ReplyMarkup{
-		InlineKeyboard: [][]tele.InlineButton{
-			buttons,
-		},
-	}
-
-	// Отправляем вопрос с кнопками
-	_, err := b.Send(c.Sender(), msg, keyboard)
-	if err != nil {
-		log.Printf("Ошибка при отправке вопроса: %v", err)
-	}
-}
-
-// Функции для работы с сессиями
-var sessions = make(map[int64]*UserSession)
-
-func getSession(userID int64) *UserSession {
-	session, exists := sessions[userID]
-	if !exists {
-		return nil
-	}
-	return session
-}
-
-func setSession(userID int64, session *UserSession) {
-	sessions[userID] = session
-}
-
-func stringToInt(s string) (int, error) {
-	var result int
-	_, err := fmt.Sscanf(s, "%d", &result)
-	return result, err
 }
