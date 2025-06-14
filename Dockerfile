@@ -1,20 +1,13 @@
-# Используем базовый образ с Go
-FROM golang:1.22.5-alpine3.19
-
-# Устанавливаем рабочую директорию внутри контейнера
+FROM golang:1.22.5-alpine3.19 AS builder
 WORKDIR /app
-
-# Копируем go.mod и go.sum
 COPY go.mod go.sum ./
-
-# Устанавливаем зависимости
 RUN go mod download
-
-# Копируем остальные файлы
 COPY . .
+RUN CGO_ENABLED=0 go build -ldflags="-s -w" -o bot .
 
-# Собираем исполняемый файл
-RUN go build -o bot .
 
-# Указываем команду запуска
+FROM alpine:3.19
+RUN apk update && apk upgrade libcrypto3 libssl3 && rm -rf /var/cache/apk/*
+WORKDIR /app
+COPY --from=builder /app/bot .
 CMD ["./bot"]
