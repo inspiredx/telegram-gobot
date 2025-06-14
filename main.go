@@ -47,7 +47,7 @@ var motivationPhrases = []string{
 
 func main() {
 	// Токен Telegram бота
-	token := "7824776293:AAHIfprFjFTWYBFA05KaHs6cRPN-_xOoe1Q"
+	token := ${{ secrets.TELEGRAM_BOT_TOKEN }}
 
 	// Настройки бота
 	pref := tele.Settings{
