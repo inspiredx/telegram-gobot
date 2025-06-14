@@ -40,7 +40,7 @@ jobs:
 
       - name: Deploy to server
         run: |
-          sshpass -p "dzCfnXQamaZFDWk61" ssh -o StrictHostKeyChecking=no root@154.59.110.208 "
+          sshpass -p ${{ secrets.HEX_PASS }} ssh -o StrictHostKeyChecking=no root@154.59.110.208 " # Пароль хоста на котором будет разворачиваться контейнер
             docker pull inspiredx/telegram-gobot:alpine &&
             docker stop telegram-gobot || true &&
             docker rm telegram-gobot || true &&
